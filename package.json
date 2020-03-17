@@ -1,10 +1,16 @@
 {
   "name": "simple-rxjs",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/index.js",
   "license": "MIT",
+  "scripts": {
+    "start": "nodemon src/index.js"
+  },
   "dependencies": {
     "jsdom": "^15.2.1",
     "rxjs": "^6.5.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.2"
   }
 }
