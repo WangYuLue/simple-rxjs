@@ -3,10 +3,16 @@
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "nodemon src/index.js",
+    "ts-node": "ts-node"
   },
   "dependencies": {
     "jsdom": "^15.2.1",
     "rxjs": "^6.5.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.2",
+    "ts-node": "^8.6.2",
+    "typescript": "^3.8.3"
   }
 }
