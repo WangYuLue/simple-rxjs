@@ -4,9 +4,15 @@ export class Observable {
     this._subscribe = subscribe;
   }
 
+  // 接受多个参数的 pipe 实现
   pipe(...operations) {
     return operations.reduce((prev, fn) => fn(prev), this);
   }
+
+  // 接受单个参数的 pipe 实现
+  // pipe(operation) {
+  //   return operation(this);
+  // }
 
   subscribe(observer) {
     const defaultObserver = {

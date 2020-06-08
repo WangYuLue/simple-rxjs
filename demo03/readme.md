@@ -1,2 +1,2 @@
-## Observable.subscribe 可以传人一个方法作为参数
+## Observable.subscribe 可以传入一个方法作为参数
 
