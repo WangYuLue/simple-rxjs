@@ -148,7 +148,7 @@ export function of(...args) {
 
 把官方的 `of` 替换成自己的 `of` ，再配上自己实现的 `Observable`，我们会发现输出和官方一致。
 
-## 3、Observable.subscribe 可以传人一个方法作为参数
+## 3、Observable.subscribe 可以传入一个方法作为参数
 
 官方 `Observable` 的 `subscribe` 可以传入一个函数进去，这样的话写起来会清爽很多，如下：
 
