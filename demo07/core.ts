@@ -109,7 +109,7 @@ export function timer(delay) {
       observer.next(0)
     }), delay)
     return {
-      unsubscribe: () => clearInterval(time)
+      unsubscribe: () => clearTimeout(time)
     }
   })
 }

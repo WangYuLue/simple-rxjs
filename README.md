@@ -58,7 +58,7 @@ ts-node demo01/index.ts
 
 这样做是为了方便对比官方rxjs和自己实现rxjs的运行效果。
 
-为了保证阅读效果，强烈建议读者边阅读边实验，点击[这里](https://github.com/WangYuLue/simple-rxjs)可以下载源码。
+为了保证阅读效果，建议读者边阅读边动手实操，点击[这里](https://github.com/WangYuLue/simple-rxjs)可以下载源码。
 
 ## 1、实现一个 Observable
 
@@ -423,7 +423,7 @@ export function timer(delay) {
       observer.next(0)
     }), delay)
     return {
-      unsubscribe: () => clearInterval(time)
+      unsubscribe: () => clearTimeout(time)
     }
   })
 }
@@ -658,6 +658,197 @@ pipe(...operations) {
 
 最后还有 `tap` 、 `take` 以及 `merge` 的实现，实现的原理和前面提到的操作符大同小异。感兴趣的读者可以继续查阅 [demo09](https://github.com/WangYuLue/simple-rxjs/tree/master/demo09) 和 [demo10](https://github.com/WangYuLue/simple-rxjs/tree/master/demo10)，由于篇幅原因，这里就不展开讲了。
 
+## 10、完整的核心代码
+
+最后，完整的核心代码如下：
+
+```ts
+export class Observable {
+  _subscribe;
+  constructor(subscribe) {
+    this._subscribe = subscribe;
+  }
+
+  pipe(...operations) {
+    return operations.reduce((prev, fn) => fn(prev), this);
+  }
+
+  subscribe(observer) {
+    const defaultObserver = {
+      next: () => { },
+      error: () => { },
+      complete: () => { }
+    }
+    if (typeof observer === 'function') {
+      return this._subscribe({ ...defaultObserver, next: observer });
+    } else {
+      return this._subscribe({ ...defaultObserver, ...observer });
+    }
+  }
+}
+
+export function of(...args) {
+  return new Observable(observer => {
+    args.forEach(arg => {
+      observer.next(arg);
+    })
+    observer.complete();
+    return {
+      unsubscribe: () => { }
+    }
+  })
+}
+
+export function fromEvent(element, event) {
+  return new Observable(observer => {
+    const handler = e => observer.next(e);
+    element.addEventListener(event, handler);
+    return {
+      unsubscribe: () => element.removeEventListener(event, handler)
+    };
+  });
+}
+
+/**
+ * @param param array or promise
+ */
+export function from(param) {
+  if (Array.isArray(param)) {
+    return new Observable(observer => {
+      param.forEach(val => observer.next(val));
+      observer.complete();
+      return {
+        unsubscribe: () => { }
+      }
+    });
+  }
+  return new Observable(observer => {
+    let canceld = false;
+    Promise.resolve(param)
+      .then(val => {
+        if (!canceld) {
+          observer.next(val);
+          observer.complete();
+        }
+      })
+      .catch(e => {
+        observer.error(e);
+      });
+    return {
+      unsubscribe: () => { canceld = true }
+    }
+  })
+}
+
+export function interval(delay) {
+  return new Observable(observer => {
+    let index = 0;
+    const time = setInterval((() => {
+      observer.next(index++)
+    }), delay)
+    return {
+      unsubscribe: () => clearInterval(time)
+    }
+  })
+}
+
+export function timer(delay) {
+  return new Observable(observer => {
+    const time = setTimeout((() => {
+      observer.next(0)
+    }), delay)
+    return {
+      unsubscribe: () => clearTimeout(time)
+    }
+  })
+}
+
+export function filter(fn) {
+  return (observable) => (
+    new Observable(observer => {
+      observable.subscribe({
+        next: val => fn(val) ? observer.next(val) : () => { },
+        error: err => observer.error(err),
+        complete: () => observer.complete(),
+      })
+    })
+  )
+}
+
+export function map(fn) {
+  return (observable) => (
+    new Observable(observer => {
+      observable.subscribe({
+        next: val => observer.next(fn(val)),
+        error: err => observer.error(err),
+        complete: () => observer.complete(),
+      })
+    })
+  )
+}
+
+export function take(num) {
+  return (observable) => (
+    new Observable(observer => {
+      let times = 0;
+      const subscription = observable.subscribe({
+        next: val => {
+          times++;
+          if (num >= times) {
+            observer.next(val)
+          } else {
+            observer.complete()
+            subscription.unsubscribe()
+          }
+        },
+        error: err => observer.error(err),
+        complete: () => observer.complete(),
+      })
+    })
+  )
+}
+
+export function tap(fn) {
+  return (observable) => (
+    new Observable(observer => {
+      observable.subscribe({
+        next: val => {
+          fn(val);
+          observer.next(val);
+        },
+        error: err => observer.error(err),
+        complete: () => observer.complete(),
+      })
+    })
+  )
+}
+
+export function merge(...observables) {
+  return (observable) => {
+    let completeNum = 0;
+    if (observable) {
+      observables = [observable, ...observables];
+    }
+    return new Observable(observer => {
+      observables.forEach(observable => {
+        observable.subscribe({
+          next: val => observer.next(val),
+          error: err => {
+            observables.forEach(observable.unsubscribe());
+            observer.error(err)
+          },
+          complete: () => {
+            completeNum++;
+            if (completeNum === observables.length) {
+              observer.complete()
+            }
+          },
+        })
+      })
+    })
+  }
+}
+```
 
 ## 写在最后
 
